@@ -21,8 +21,13 @@ class MonetaSdkSoapConnector extends MonetaWebServiceConnector
 	 */
 	public $version = "VERSION_2";
 
+	private $isDebug;
+
+
 	function __construct($wsdl, $username, $password, $options = null, $isDebug = false)
 	{
+		$this->isDebug = $isDebug;
+
 		// Отключаем кэширование в режиме отладки
 		ini_set("soap.wsdl_cache_enabled", !$isDebug);
 
@@ -64,8 +69,6 @@ class MonetaSdkSoapConnector extends MonetaWebServiceConnector
 
 		$usernameToken = new \SoapVar($tmp, SOAP_ENC_OBJECT, null, $sns, 'wsse:UsernameToken', $sns);
 
-		//Объект UsernameToken присоединяется к своему родительскому XML-тегу <Security>
-		// и создается SoapHeader <Security>
 		$secHeaderValue = new \SoapVar($usernameToken, SOAP_ENC_OBJECT, NULL, $sns, 'wsse:Security', $sns);
 		return new \SoapHeader($sns, 'Security', $secHeaderValue, true);
 	}
@@ -73,11 +76,19 @@ class MonetaSdkSoapConnector extends MonetaWebServiceConnector
 
 	protected function call($method, $data, $options = null)
 	{
-		// этот костыль для установки версии API (нужен рефакторинг метода call)
+		$soapClient = $this->client;
+
 		if (is_object($data[0]))
 			$data[0]->version = $this->version;
 
-		return $this->client->__soapCall($method, $data, $options, $this->inputHeaders, $this->outputHeaders);
+		if ($this->isDebug) {
+			MonetaSdkUtils::addToLog("soapCall method: {$method}\n");
+			MonetaSdkUtils::addToLog("soapCall data:\n".print_r($data, true));
+		}
+
+		$result = $soapClient->__soapCall($method, $data, $options, $this->inputHeaders, $this->outputHeaders);
+
+		return $result;
 	}
 
 

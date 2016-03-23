@@ -12,6 +12,12 @@ class MonetaSdkMethods
 
     const EXCEPTION_MONETA                  = 'merchantAPI error: ';
 
+    const INCORRECT_INPUT_DATA              = 'incorrect input data: ';
+
+    const EXCEPTION_INCORRECT_AMOUNT        = 'incorrect amount: ';
+
+    const EXCEPTION_MONETA_METHOD           = 'unable to execute method: ';
+
     public $settings;
 
     private $monetaConnectionType;
@@ -60,6 +66,7 @@ class MonetaSdkMethods
             if ($this->monetaConnectionType == 'json' && isset($response['Envelope']['Body']['fault'])) {
                 // error is detected
                 $this->parseJsonException($response['Envelope']['Body']['fault']);
+                echo $this->renderError();
             }
             else {
                 $this->data = $response;
@@ -175,6 +182,248 @@ class MonetaSdkMethods
     }
 
     /**
+     * @param $accountId
+     * @return int
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaGetAccountBalance($accountId)
+    {
+        $balance = 0;
+
+        try
+        {
+            $monetaAccount = $this->monetaService->FindAccountById($accountId);
+            if ($monetaAccount) {
+                $monetaAccount = json_decode(json_encode($monetaAccount, true));
+                if (isset($monetaAccount->account->balance)) {
+                    $balance = $monetaAccount->account->balance;
+                }
+            }
+        }
+        catch (Exception $e)
+        {
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaGetAccountBalance: ' . print_r($e, true));
+        }
+
+        return $balance;
+    }
+
+    /**
+     * @param $firstName
+     * @param $lastName
+     * @param $email
+     * @param $gender
+     * @return bool
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaCreateUser($firstName, $lastName, $email, $gender)
+    {
+        $unitId = false;
+
+        try
+        {
+            if (!$firstName || !$lastName || !preg_match('/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,9}$/i', $email)) {
+                throw new MonetaSdkException(self::EXCEPTION_INCORRECT_INPUT_DATA . 'sdkMonetaCreateUser');
+            }
+            if (!in_array($gender, array('MALE', 'FEMALE'))) {
+                $gender = 'MALE';
+            }
+
+            $profile = new \Moneta\Types\Profile();
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('first_name',                $firstName));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('last_name',                 $lastName));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('email_for_notifications',   $email));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('sex',                       $gender));
+
+            $monetaProfile = new \Moneta\Types\CreateProfileRequest();
+            if ($this->getSettingValue('monetasdk_prototype_user_unit_id')) {
+                $monetaProfile->unitId = $this->getSettingValue('monetasdk_prototype_user_unit_id');
+            }
+
+            $monetaProfile->profileType = \Moneta\Types\ProfileType::client;
+            $monetaProfile->profile = $profile;
+
+            $unitId = $this->monetaService->CreateProfile($monetaProfile);
+            if (!$unitId) {
+                throw new MonetaSdkException(self::EXCEPTION_MONETA_METHOD . 'sdkMonetaCreateUser');
+            }
+        }
+        catch (Exception $e)
+        {
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaCreateUser: ' . print_r($e, true));
+        }
+
+        return $unitId;
+    }
+
+    /**
+     * @param $unitId
+     * @param $firstName
+     * @param $lastName
+     * @param $email
+     * @param $gender
+     * @return bool
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaUpdateUser($unitId, $firstName, $lastName, $email, $gender)
+    {
+        try
+        {
+            if (!$firstName || !$lastName || !preg_match('/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,9}$/i', $email)) {
+                throw new MonetaSdkException(self::EXCEPTION_INCORRECT_INPUT_DATA . 'sdkMonetaCreateUser');
+            }
+            if (!in_array($gender, array('MALE', 'FEMALE'))) {
+                $gender = 'MALE';
+            }
+
+            $profile = new \Moneta\Types\Profile();
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('first_name',                $firstName));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('last_name',                 $lastName));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('email_for_notifications',   $email));
+            $profile->addAttribute($this->pvtMonetaCreateAttribute('sex',                       $gender));
+
+            $monetaProfile = new \Moneta\Types\CreateProfileRequest();
+            $monetaProfile->unitId = $unitId;
+            $monetaProfile->profile = $profile;
+
+            $this->monetaService->EditProfile($monetaProfile);
+            $result = true;
+        }
+        catch (Exception $e)
+        {
+            $result = false;
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaCreateUser: ' . print_r($e, true));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param $unitId
+     * @param $paymentPassword
+     * @param $alias
+     * @return bool
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaCreateAccount($unitId, $paymentPassword, $alias)
+    {
+        try
+        {
+            $monetaAccount = new \Moneta\Types\CreateAccountRequest();
+            $monetaAccount->currency = \Moneta\Types\Currency::RUB;
+            $monetaAccount->unitId              = $unitId;
+            $monetaAccount->paymentPassword     = $paymentPassword;
+            $monetaAccount->alias               = $alias;
+            if ($this->getSettingValue('monetasdk_prototype_user_account_id')) {
+                $monetaAccount->prototypeAccountId = $this->getSettingValue('monetasdk_prototype_user_account_id');
+            }
+
+            $accountId = $this->monetaService->CreateAccount($monetaAccount);
+            if (!$accountId) {
+                throw new MonetaSdkException(self::EXCEPTION_MONETA_METHOD . 'sdkMonetaCreateAccount');
+            }
+
+            $handleCreateAccount = MonetaSdkUtils::handleEvent('CreateAccountResult', array('unitId' => $unitId, 'accountId' => $accountId, 'paymentPassword' => $paymentPassword, 'alias' => $alias));
+        }
+        catch (Exception $e)
+        {
+            $accountId = false;
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaCreateAccount: ' . print_r($e, true));
+        }
+
+        return $accountId;
+    }
+
+    /**
+     * @param $fromAccountId
+     * @param $fromAccountPaymentPassword
+     * @param $toAccountId
+     * @param $amount
+     * @param string $description
+     * @return array|bool|mixed|null|object
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaTransfer($fromAccountId, $fromAccountPaymentPassword, $toAccountId, $amount, $description = '')
+    {
+        try
+        {
+            if ($amount <= 0) {
+                throw new MonetaSdkException(self::EXCEPTION_INCORRECT_AMOUNT . 'sdkMonetaTransfer');
+            }
+
+            $amount = number_format($amount, 2, '.', '');
+
+            $monetaTransfer = new \Moneta\Types\TransferRequest();
+            $monetaTransfer->payer              = $fromAccountId;
+            $monetaTransfer->paymentPassword    = $fromAccountPaymentPassword;
+            $monetaTransfer->payee              = $toAccountId;
+            $monetaTransfer->amount             = $amount;
+            $monetaTransfer->description        = $description;
+            $monetaTransfer->isPayerAmount      = true;
+
+            $result = json_decode(json_encode($this->monetaService->Transfer($monetaTransfer), true));
+            if (!$result) {
+                throw new MonetaSdkException(self::EXCEPTION_MONETA_METHOD . 'sdkMonetaTransfer');
+            }
+        }
+        catch (Exception $e)
+        {
+            $result = false;
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaTransfer: ' . print_r($e, true));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param $accountId
+     * @param $dateFrom
+     * @param $dateTo
+     * @param int $itemsPerPage
+     * @param int $pageNumber
+     * @return bool
+     * @throws MonetaSdkException
+     */
+    public function sdkMonetaHistory($accountId, $dateFrom, $dateTo, $itemsPerPage = 20, $pageNumber = 1)
+    {
+        try
+        {
+            $filter = new \Moneta\Types\FindOperationsListRequestFilter();
+            $filter->accountId  = $accountId;
+            $filter->dateFrom   = $dateFrom;
+            $filter->dateTo     = $dateTo;
+
+            $pager = new \Moneta\Types\Pager();
+            $pager->pageNumber  = $pageNumber;
+            $pager->pageSize    = $itemsPerPage;
+
+            $request = new \Moneta\Types\FindOperationsListRequest();
+            $request->filter = $filter;
+            $request->pager = $pager;
+
+            $history = $this->monetaService->FindOperationsList($request);
+            if (!$history) {
+                throw new MonetaSdkException(self::EXCEPTION_MONETA_METHOD . 'sdkMonetaHistory');
+            }
+
+            $history = json_decode(json_encode($history, true));
+        }
+        catch (Exception $e)
+        {
+            $history = false;
+            $this->error = true;
+            throw new MonetaSdkException(self::EXCEPTION_MONETA . 'sdkMonetaHistory: ' . print_r($e, true));
+        }
+
+        return $history;
+    }
+
+    /**
      * Create new invoice
      *
      * @param null $payer
@@ -219,7 +468,6 @@ class MonetaSdkMethods
             $invoiceResponse = $this->monetaService->Invoice($invoiceRequest);
 
             if ($this->monetaConnectionType == 'json' && isset($invoiceResponse['Envelope']['Body']['fault'])) {
-                // error is detected
                 $e = $invoiceResponse['Envelope']['Body']['fault'];
                 throw new MonetaSdkException(self::EXCEPTION_MONETA . 'pvtMonetaCreateInvoice: ' . print_r($e, true));
             }
@@ -324,6 +572,14 @@ class MonetaSdkMethods
             $detectedEvent = 'ForwardChoosePaymentSystemForm';
         }
 
+        if ($this->isFieldsSet(array('moneta_sdk_first_name', 'moneta_sdk_last_name', 'moneta_sdk_email', 'moneta_sdk_gender'))) {
+            $detectedEvent = 'ForwardCreateUserForm';
+        }
+
+        if ($this->isFieldsSet(array('moneta_sdk_account', 'moneta_sdk_date_from', 'moneta_sdk_date_to'))) {
+            $detectedEvent = 'ForwardAccountHistoryForm';
+        }
+
         if ($this->isFieldsSet(array('MNT_ID', 'MNT_TRANSACTION_ID', 'MNT_AMOUNT'))) {
             $detectedEvent = 'ForwardPaymentForm';
         }
@@ -340,7 +596,7 @@ class MonetaSdkMethods
      */
     public function getInternalEventNames()
     {
-        return array('ForwardChoosePaymentSystemForm', 'ForwardPaymentForm', 'MonetaSendCallBack');
+        return array('ForwardAccountHistoryForm', 'ForwardCreateUserForm', 'ForwardChoosePaymentSystemForm', 'ForwardPaymentForm', 'MonetaSendCallBack');
     }
 
     /**
@@ -348,9 +604,10 @@ class MonetaSdkMethods
      */
     public function renderError()
     {
-        $viewName = 'ErrorMessage';
         $data = array('error' => $this->error, 'errorCode' => $this->errorCode, 'errorMessage' => $this->errorMessage, 'errorMessageHumanConverted' => $this->errorMessageHumanConverted);
-        return MonetaSdkUtils::requireView($viewName, $data, $this->getSettingValue('monetasdk_view_files_path'));
+        $renderResult = MonetaSdkUtils::requireView('ErrorMessage', $data, $this->getSettingValue('monetasdk_view_files_path'));
+        $this->render = $renderResult;
+        return $renderResult;
     }
 
     /**
@@ -473,7 +730,7 @@ class MonetaSdkMethods
                 $this->errorMessageHumanConverted = $this->settings[$this->errorCode];
             }
             else {
-                $this->errorMessageHumanConverted = $this->settings['0'];
+                $this->errorMessageHumanConverted = $this->errorMessage;
                 $handleServiceUnavailableEvent = MonetaSdkUtils::handleEvent('ServiceUnavailable', array('errorCode' => $this->errorCode, 'errorMessage' => $this->errorMessage, 'errorMessageHumanConverted' => $this->errorMessageHumanConverted), $this->getSettingValue('monetasdk_event_files_path'));
             }
         }
@@ -501,7 +758,7 @@ class MonetaSdkMethods
             $this->errorMessageHumanConverted = $this->settings[$this->errorCode];
         }
         else {
-            $this->errorMessageHumanConverted = $this->settings['0'];
+            $this->errorMessageHumanConverted = $this->errorMessage;
             $handleServiceUnavailableEvent = MonetaSdkUtils::handleEvent('ServiceUnavailable', array('errorCode' => $this->errorCode, 'errorMessage' => $this->errorMessage, 'errorMessageHumanConverted' => $this->errorMessageHumanConverted), $this->getSettingValue('monetasdk_event_files_path'));
         }
 
