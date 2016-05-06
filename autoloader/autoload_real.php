@@ -7,7 +7,7 @@ class RealAutoloaderInit
     public static function loadClassLoader($class)
     {
         if ('Composer\Autoload\ClassLoader' === $class) {
-            require __DIR__ . '/ClassLoader.php';
+            require 'composer/ClassLoader.php';
         }
     }
 
