@@ -4,7 +4,9 @@ function sdk_autoloader() {
     $file_map = array('MonetaSdkStorage.php', 'MonetaSdkUtils.php', 'MonetaSdkException.php', 'MonetaSdkError.php',
                 'MonetaSdkResult.php', 'MonetaSdkRender.php', 'MonetaSdkEmptyStorage.php', 'MonetaSdkFilesStorage.php',
                 'MonetaSdkMysqlStorage.php', 'MonetaWebServiceConnector.php', 'MonetaWebService.php', 'MonetaSdkJsonConnector.php',
-                'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php');
+                'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php', 'MonetaSdkKassa.php',
+                'MonetaSdkEmptyKassa.php', 'MonetaSdkModuleKassa.php', 'MonetaSdkAtolonlineKassa.php',
+                'MonetaSdkPayanywayKassa.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/";
     
