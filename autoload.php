@@ -18,7 +18,7 @@ function sdk_autoloader() {
 }
 
 function moneta_base_types_autoloader() {
-    $file_map = array('Entity.php', 'EntityBatchRequestType.php', 'TransactionRequestType.php', 'VerifyTransferResponseType.php',
+    $file_map = array('Document.php', 'Entity.php', 'EntityBatchRequestType.php', 'TransactionRequestType.php', 'VerifyTransferResponseType.php',
                       'OperationInfo.php', 'OperationInfoList.php', 'BankAccount.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/Types/";
