@@ -6,7 +6,7 @@ function sdk_autoloader() {
                 'MonetaSdkMysqlStorage.php', 'MonetaWebServiceConnector.php', 'MonetaWebService.php', 'MonetaSdkJsonConnector.php',
                 'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php', 'MonetaSdkKassa.php',
                 'MonetaSdkEmptyKassa.php', 'MonetaSdkModuleKassa.php', 'MonetaSdkAtolonlineKassa.php',
-                'MonetaSdkPayanywayKassa.php');
+                'MonetaSdkPayanywayKassa.php', 'MonetaSdkStarrysKassa.php', 'MonetaSdkBuhsoftKassa.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/";
     
@@ -18,7 +18,7 @@ function sdk_autoloader() {
 }
 
 function moneta_base_types_autoloader() {
-    $file_map = array('Document.php', 'Entity.php', 'EntityBatchRequestType.php', 'TransactionRequestType.php', 'VerifyTransferResponseType.php',
+    $file_map = array('Entity.php', 'EntityBatchRequestType.php', 'TransactionRequestType.php', 'VerifyTransferResponseType.php',
                       'OperationInfo.php', 'OperationInfoList.php', 'BankAccount.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/Types/";
