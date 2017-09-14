@@ -56,7 +56,6 @@ function show_directory() {
         while (false !== ($entry = readdir($handle))) {
             $filepath = $vendorDir . $entry;
             if (file_exists($filepath) && !is_dir($filepath) && strpos($entry, 'Type.php')) {
-                echo "{$filepath}<br/>";
                 require_once($filepath);
             }
         }
