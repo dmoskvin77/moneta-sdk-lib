@@ -6,7 +6,8 @@ function sdk_autoloader() {
                 'MonetaSdkMysqlStorage.php', 'MonetaWebServiceConnector.php', 'MonetaWebService.php', 'MonetaSdkJsonConnector.php',
                 'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php', 'MonetaSdkKassa.php',
                 'MonetaSdkEmptyKassa.php', 'MonetaSdkModuleKassa.php', 'MonetaSdkAtolonlineKassa.php',
-                'MonetaSdkPayanywayKassa.php', 'MonetaSdkStarrysKassa.php', 'MonetaSdkBuhsoftKassa.php');
+                'MonetaSdkPayanywayKassa.php', 'MonetaSdkStarrysKassa.php', 'MonetaSdkBuhsoftKassa.php',
+                'MonetaSdkKomtetKassa.php', 'MonetaSdkIretailKassa.php',);
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/";
     
@@ -56,6 +57,7 @@ function show_directory() {
         while (false !== ($entry = readdir($handle))) {
             $filepath = $vendorDir . $entry;
             if (file_exists($filepath) && !is_dir($filepath) && strpos($entry, 'Type.php')) {
+                echo "{$filepath}<br/>";
                 require_once($filepath);
             }
         }
