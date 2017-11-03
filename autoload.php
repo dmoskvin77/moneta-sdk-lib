@@ -7,7 +7,7 @@ function sdk_autoloader() {
                 'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php', 'MonetaSdkKassa.php',
                 'MonetaSdkEmptyKassa.php', 'MonetaSdkModuleKassa.php', 'MonetaSdkAtolonlineKassa.php',
                 'MonetaSdkPayanywayKassa.php', 'MonetaSdkStarrysKassa.php', 'MonetaSdkBuhsoftKassa.php',
-                'MonetaSdkKomtetKassa.php', 'MonetaSdkIretailKassa.php',);
+                'MonetaSdkKomtetKassa.php', 'MonetaSdkIretailKassa.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/";
     
