@@ -1,13 +1,15 @@
 <?php
 
 function sdk_autoloader() {
+
     $file_map = array('MonetaSdkStorage.php', 'MonetaSdkUtils.php', 'MonetaSdkException.php', 'MonetaSdkError.php',
                 'MonetaSdkResult.php', 'MonetaSdkRender.php', 'MonetaSdkEmptyStorage.php', 'MonetaSdkFilesStorage.php',
                 'MonetaSdkMysqlStorage.php', 'MonetaWebServiceConnector.php', 'MonetaWebService.php', 'MonetaSdkJsonConnector.php',
                 'MonetaSdkSoapConnector.php', 'MonetaSdkMethods.php', 'MonetaSdk.php', 'MonetaSdkKassa.php',
                 'MonetaSdkEmptyKassa.php', 'MonetaSdkModuleKassa.php', 'MonetaSdkAtolonlineKassa.php',
                 'MonetaSdkPayanywayKassa.php', 'MonetaSdkStarrysKassa.php', 'MonetaSdkBuhsoftKassa.php',
-                'MonetaSdkKomtetKassa.php', 'MonetaSdkIretailKassa.php');
+                'MonetaSdkKomtetKassa.php', 'MonetaSdkIretailKassa.php', 'MonetaSdkOrangedataKassa.php',
+		'MonetaSdkDreamkassKassa.php');
 
     $vendorDir = dirname(__DIR__) . "/moneta-sdk-lib/src/Moneta/";
     
