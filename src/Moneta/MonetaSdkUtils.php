@@ -19,7 +19,6 @@ class MonetaSdkUtils
      * ini Files
      */
 	const INI_FILE_BASIC_SETTINGS 		= "basic_settings.ini";
-    const INI_FILE_KASSA_SETTINGS 		= "kassa_settings.ini";
 	const INI_FILE_DATA_STORAGE 		= "data_storage.ini";
 	const INI_FILE_PAYMENT_SYSTEMS 		= "payment_systems.ini";
 	const INI_FILE_PAYMENT_URLS 		= "payment_urls.ini";
@@ -34,7 +33,6 @@ class MonetaSdkUtils
 	const EXCEPTION_NO_INI_FILE 		= ".ini file not found: ";
 	const EXCEPTION_NO_VIEW_FILE 		= "view file not found: ";
 	const EXCEPTION_NO_VALUE_IN_ARRAY 	= "no vallue in array: ";
-    const EXCEPTION_NO_CERT_FILE 		= ".pem cert file not found: ";
 
     /**
      * Date format
@@ -59,7 +57,6 @@ class MonetaSdkUtils
         $iniFilesPath = $configPath ? $configPath : __DIR__ . self::INI_FILES_PATH;
 
 		$arBasicSettings 	= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_BASIC_SETTINGS);
-        $arKassaSettings 	= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_KASSA_SETTINGS);
 		$arDataStorage 		= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_DATA_STORAGE);
 		$arPaymentSystems 	= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_PAYMENT_SYSTEMS);
 		$arPaymentUrls 		= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_PAYMENT_URLS);
@@ -68,7 +65,7 @@ class MonetaSdkUtils
         $arAdditionalFields	= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_ADDITIONAL_FIELDS);
         $arRegularPayments	= self::getSettingsFromIniFile($iniFilesPath . self::INI_FILE_REGULAR_PAYMENTS);
 
-		return array_merge($arBasicSettings, $arKassaSettings, $arDataStorage, $arPaymentSystems, $arPaymentUrls, $arSuccessFailUrls, $arErrorTexts, $arAdditionalFields, $arRegularPayments);
+		return array_merge($arBasicSettings, $arDataStorage, $arPaymentSystems, $arPaymentUrls, $arSuccessFailUrls, $arErrorTexts, $arAdditionalFields, $arRegularPayments);
 	}
 
     /**
@@ -99,11 +96,11 @@ class MonetaSdkUtils
      */
 	public static function getValueFromArray($value, $array)
 	{
-	    $res = false;
-        if (isset($array[$value])) {
-            $res = $array[$value];
-        }
-		return $res;
+		if (!isset($array[$value])) {
+			throw new MonetaSdkException(self::EXCEPTION_NO_VALUE_IN_ARRAY . $value);
+		}
+
+		return $array[$value];
 	}
 
     /**
@@ -115,7 +112,7 @@ class MonetaSdkUtils
 	public static function requireView($viewName, $data, $externalPath = null)
 	{
         $result = false;
-        if ($externalPath && $externalPath != '') {
+        if (!$externalPath && $externalPath != '') {
             $viewFileName = __DIR__ . $externalPath . $viewName . '.php';
         }
         else {
@@ -177,7 +174,7 @@ class MonetaSdkUtils
 		$result = null;
 		if ($cookieName && isset($_COOKIE['mnt_data']) && $_COOKIE['mnt_data']) {
 			$cookieMntSerializedData = $_COOKIE['mnt_data'];
-			$cookieMntData = @unserialize($cookieMntSerializedData);
+			$cookieMntData = json_decode($cookieMntSerializedData, true);
 			if (isset($cookieMntData[$cookieName]) && $cookieMntData[$cookieName]) {
 				$result = $cookieMntData[$cookieName];
 			}
@@ -203,14 +200,14 @@ class MonetaSdkUtils
 		$cookieMntData = null;
 		if (isset($_COOKIE['mnt_data']) && $_COOKIE['mnt_data']) {
 			$cookieMntSerializedData = $_COOKIE['mnt_data'];
-			$cookieMntData = @unserialize($cookieMntSerializedData);
+			$cookieMntData = json_decode($cookieMntSerializedData, true);
 		}
 		if (!$cookieMntData) {
 			$cookieMntData = array();
 		}
 		$cookieMntData[$cookieName] = $cookieValue;
         $cookieMntData = array_merge($cookieMntData, self::$redirectArray);
-		setcookie('mnt_data', serialize($cookieMntData));
+		setcookie('mnt_data', json_encode($cookieMntData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
 		return true;
 	}
@@ -317,16 +314,4 @@ class MonetaSdkUtils
         return $result;
     }
 
-    /**
-     * @param $string
-     * @return string
-     */
-    public static function convertEscapedUnicode($string = '')
-    {
-        $strName = (string)$string;
-        $strName = preg_replace_callback('/u([0-9a-fA-F]{4})/', function ($match) {
-            return mb_convert_encoding(pack('H*', $match[1]), 'UTF-8', 'UCS-2BE');
-        }, $strName);
-        return $strName = str_replace('\\', '', $strName);
-    }
 }
